@@ -1,0 +1,24 @@
+version: "3.9"
+
+services:
+  ihccaptainA:
+    image: sbv1307/docker-ihccaptain
+    restart: always
+    ports:
+      - 8100:80
+      - 9100:443
+    volumes:
+      - ihcA_data:/opt/ihccaptain/data
+  
+  ihccaptainB:
+    image: sbv1307/docker-ihccaptain
+    restart: always
+    ports:
+      - 8200:80
+      - 9200:443
+    volumes:
+      - ihcB_data:/opt/ihccaptain/data
+
+volumes:
+  ihcA_data:
+  ihcB_data:
