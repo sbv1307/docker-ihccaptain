@@ -8,6 +8,7 @@ COPY VERSION .
 COPY host/.bash_aliases /root
 # Current version of installer is broken for docker
 #ADD http://jemi.dk/ihc/files/install /tmp/install
+
 ADD host/custom_installer/installer.sh /tmp/install
 RUN chmod 755 /tmp/install
 RUN ["/bin/bash", "-c", "/tmp/install docker"]
