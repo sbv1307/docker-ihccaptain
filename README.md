@@ -7,10 +7,10 @@ The containers will expose port 8100 respectively 8200, on which IHC® Captain c
 
 ## Usage
 
-1. Open the web interface at 'http://[raspberry-pi-ip-address:8100](raspberry-pi-ip-address:8100)' and/or 'http://[raspberry-pi-ip-address:8200](raspberry-pi-ip-address:8200)'.
-2. At first, a dialog box is opened, in which username, password and the IP address for the IHC® Controller is entered.
-   'Use a specific IHC user, with administrator rights on the IHC® Controller for this purpose.'
-3. After this is referred to [IHC® Captain's manual](https://jemi.dk/ihc/#mainmain).
+* Open the web interface at 'http://[raspberry-pi-ip-address:8100](raspberry-pi-ip-address:8100)' and/or 'http://[raspberry-pi-ip-address:8200](raspberry-pi-ip-address:8200)'.
+* At first, a dialog box is opened, in which username, password and the IP address for the IHC® Controller is entered.[](https://)
+  'Use a specific IHC user, with administrator rights on the IHC® Controller for this purpose.'
+* After this is referred to [IHC® Captain's manual](https://jemi.dk/ihc/#mainmain).
 
 ## Requirements
 
@@ -60,30 +60,78 @@ docker-compose up -d
 
 Detailed installation instructions for this "Profe of Concept" (PoC) project can be found in the file `detailedInstall.xlsx`.
 
+## Backup / Restore IHC Captain data (Manual process)
+
+**The Backup process:**
+
+- Log on to Raspberry pi
+- Create two backup directories `mkdir ihcA_data` and `mkdir ihcB_data`
+- Verify Docker container names pi_ihccaptainA_1 and pi_ihccaptainB_1 `docker ps`
+- Copy IHC Captain data from the docker containers to local host
+  `docker cp pi_ihccaptainA_1:/opt/ihccaptain/data ./ihcA_data` and `docker cp pi_ihccaptainB_1:/opt/ihccaptain/data ./ihcB_data`
+- Create backupfile. `tar cvf IHC_Captain.tar ./ihcA_data ./ihcB_data`
+- Move IHC_Captain.tar to a secure location.
+
+**The Restore process:**
+
+- Log on to Raspberry pi.
+- Get IHC_Captain.tar to current dir.
+- Extract backup: `tar xvf IHC_Captain.tar .`
+- Stop running containers: `docker-compose stop`
+- Copy IHC Captain data into containers:
+  `docker cp ./ihcA_data/data pi_ihccaptainA_1:/opt/ihccaptain/` and `docker cp ./ihcB_data/data pi_ihccaptainB_1:/opt/ihccaptain/`
+- Start IHC Captain containers: `docker-compose up -d`
+
 ## Troubleshooting
 
 Run an instance of `sbv1307/docker-ihccaptain:sh` instead of using the `:latest` image.
-The `:sh` image, does not run the startup script `run_ihc_captain_in_docker.sh` automatically.
+The `:sh` image, does not automatically run the startup script `run_ihc_captain_in_docker.sh`.
 
 #### Usefull commands:
 
-To start an instance (container):
+To stop the containers started by `docker-compose up -d`use the command:
+
+````bash
+docker-compose stop
+````
+
+To start an instance (container)e.g. for investigations purposes:
+The containers tagged with "sh", does not start the IHC Captain services automatically.
 
 ```bash
 docker run -it -p 8300:80 -p 9300:443 sbv1307/docker-ihccaptain:sh
 ```
 
-When attached to the container, run and verify the sercices, started by `sbv1307/docker-ihccaptain:sh`
+When attached to the container, run and verify the services, started by
+`sbv1307/docker-ihccaptain:sh`
 
 ```bash
-[ ! -f /opt/ihccaptain/data/serverconfig.json ] && cp /opt/ihccaptain/dataOrg/serverconfig.json /opt/ihccaptain/data
+[ ! -f /opt/ihccaptain/data/serverconfig.json ] && cp /opt/ihccaptain/dataOrg/serverconfig.json 
 service php7.3-fpm start
 service php7.3-fpm status
 service nginx start
 service nginx status
 ```
 
-Chedk 'http://[raspberry-pi-ip-address:8300](raspberry-pi-ip-address:8300)' to verify is IHC Captain is available.
+Other userfull commands:
+
+````bash
+docker ps -a
+docker rm -f $(docker ps -aq)
+docker volume ls
+docker volume rm <Volume Name>
+````
+
+Command used to build sbv1307/docker-ihccaptain docker container.
+Before building the container, modify the Docker file:
+
+* Deside if the container will start IHC Captain services (wether or not to run the command
+  `CMD /app/run_ihc_captain_in_docker.s` e.g. comment out the line.
+* Deside which IHC Captain installer to use. P.t. the one at `http://jemi.dk/ihc/files/install` Fails to build the container.
+
+```bash
+docker build --pull --rm -f "Dockerfile" -t docker-ihccaptain:<TAG>
+```
 
 ## Credits
 
