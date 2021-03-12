@@ -68,7 +68,8 @@ Detailed installation instructions for this "Profe of Concept" (PoC) project can
 - Create two backup directories `mkdir ihcA_data` and `mkdir ihcB_data`
 - Verify Docker container names pi_ihccaptainA_1 and pi_ihccaptainB_1 `docker ps`
 - Copy IHC Captain data from the docker containers to local host
-  `docker cp pi_ihccaptainA_1:/opt/ihccaptain/data ./ihcA_data` and `docker cp pi_ihccaptainB_1:/opt/ihccaptain/data ./ihcB_data`
+- - `docker cp pi_ihccaptainA_1:/opt/ihccaptain/data ./ihcA_data`
+- - `docker cp pi_ihccaptainB_1:/opt/ihccaptain/data ./ihcB_data`
 - Create backupfile. `tar cvf IHC_Captain.tar ./ihcA_data ./ihcB_data`
 - Move IHC_Captain.tar to a secure location.
 
