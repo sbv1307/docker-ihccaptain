@@ -70,7 +70,8 @@ Detailed installation instructions for this "Profe of Concept" (PoC) project can
 - Copy IHC Captain data from the docker containers to local host
 - - `docker cp pi_ihccaptainA_1:/opt/ihccaptain/data ./ihcA_data`
 - - `docker cp pi_ihccaptainB_1:/opt/ihccaptain/data ./ihcB_data`
-- Create backupfile. `tar cvf IHC_Captain.tar ./ihcA_data ./ihcB_data`
+- Create backupfile. 
+- - `tar cvf IHC_Captain.tar ./ihcA_data ./ihcB_data`
 - Move IHC_Captain.tar to a secure location.
 
 **The Restore process:**
@@ -80,8 +81,153 @@ Detailed installation instructions for this "Profe of Concept" (PoC) project can
 - Extract backup: `tar xvf IHC_Captain.tar .`
 - Stop running containers: `docker-compose stop`
 - Copy IHC Captain data into containers:
-  `docker cp ./ihcA_data/data pi_ihccaptainA_1:/opt/ihccaptain/` and `docker cp ./ihcB_data/data pi_ihccaptainB_1:/opt/ihccaptain/`
+```bash
+docker cp ./ihcA_data/data pi_ihccaptainA_1:/opt/ihccaptain/
+docker cp ./ihcB_data/data pi_ihccaptainB_1:/opt/ihccaptain/
+```
 - Start IHC Captain containers: `docker-compose up -d`
+
+## Backup IHC Captain data ("Semi" Automataed process)
+
+
+**Preparations for automatisation.**
+
+Create backup destination directory:
+```bash
+sudo mkdir -pm 1777 /mnt/remote/IHC_Captain-Docker-backup
+```
+Install ftp server
+```bash
+sudo apt update
+sudo apt full-upgrade
+sudo apt install vsftpd
+```
+
+Configure FTP server
+```bash
+sudo vi /etc/vsftpd.conf
+```
+Uncomment the following lines
+```bash
+write_enable=YES
+local_umask=022
+chroot_local_user=YES
+```
+Change the follwing lines:
+```bash
+anonymous_enable=NO
+```
+Add the follosing lines
+```bash
+user_sub_token=$USER
+local_root=/mnt/remote
+allow_writeable_chroot=YES
+```
+Restart FTP service
+```bash
+sudo service vsftpd restart
+```
+
+Add FTP user 
+```bash
+sudo useradd ftpuser
+sudo passwd ftpuser
+```
+
+Verify FTP setup - From windows CMD do: ftp 192.168.10.117
+
+**The Backup script**
+Create a file called ´IHC_Captain-Docker-backupp.sh´ with the following content (OBS! Remember to chmod -x):
+
+
+```bash
+vi IHC_Captain-Docker-backup.sh
+```
+```bash
+#!/bin/bash
+# Set variables to give a flxiable environemnt
+# Working directory is where the docker-compose.yml file is located
+
+WORKING_DIR='/home/pi/IHC_Captain'
+
+# Distenation directory is the directory in which the backup and logfiles are located
+BACKUP_DIR='/mnt/remote/IHC_Captain-Docker-backup'
+LOGFILE_DIR='/mnt/remote'
+BACKUP_FILE="IHC_Captain-Docker_$(date +"%F_%H.%M.%S").bak"
+ERROR_LOG="IHC_Captain-Docker-backup.log"
+
+# When run from Cropn: Un-comment nest line to redirect ALL output to ERROR_LOG in LOGFILE_DIR
+# exec &>> $LOGFILE_DIR/$ERROR_LOG
+
+# Change directory to where docker-compose.yml file is located
+
+cd $WORKING_DIR
+
+# Prepare DEST_PATH's
+
+if [[ -d "ihcA_data" ]]
+then
+    rm -r ihcA_data/*
+else
+  mkdir ihcA_data
+fi
+
+if [[ -d "ihcB_data" ]]
+then
+    rm -r ihcB_data/*
+else
+  mkdir ihcB_data
+fi
+
+# Run IHC backup commands.
+
+/usr/bin/docker cp pi_ihccaptainA_1:/opt/ihccaptain/data ./ihcA_data
+/usr/bin/docker cp pi_ihccaptainB_1:/opt/ihccaptain/data ./ihcB_data
+
+# Compress backupfile
+tar cvf $BACKUP_DIR/$BACKUP_FILE ./ihcA_data ./ihcB_data
+/bin/gzip $BACKUP_DIR/$BACKUP_FILE
+
+# Delete files more than 8 days old
+/usr/bin/find $BACKUP_DIR/IHC_Captain-Docker* -mtime +2 -delete
+```
+```bash
+chmod +x IHC_Captain-Docker-backup.sh
+```
+
+## Configure Hybrid Backup Sync on QNAP NAS2 to offload teslamate backup file
+
+1. Login as admin to qnap-nas-2 and run Hybrid Bakcup Sync
+2. Create job "Sync" -> Active Sync -> Sync Remote to Local
+3. Choose "FTP" as Network Protocol
+4. Sync Job Name: **IHC_Captain-Docker-backup->RaspberryPi>Docker-IHC-Captain>Backup**
+```bash
+ Settings: 
+   TeslaMate-FTP
+   IP address: 192.168.10.117
+   Username: pi
+   Password: 
+```
+5. Local destination: /RASPBERRY_PI_VOLUME/Docker-IHC-Captain/backup
+6. Remopte Souce Folder: /IHC_Captain-Docker-backup
+7. [Add] locations and go to 'Advanced settings'
+```
+Schedule:
+  Periodically: Daily -> 02
+Policy:
+  Delete extra files
+Filter:
+  Include file types: Other -> *.gz
+Events:
+  Send alert emails when...: A job finishes
+```
+
+
+## **The Backup process**
+
+1. Login to IHC Docker (192.168.10.117) and Run /home/IHC_Captain/IHC_Captain-Docker-backup.sh
+
+Hybrid Backup Sync on QNAP NAS2 will pickup the generated backup file at the next periodically run at 02:00.
 
 ## Troubleshooting
 
