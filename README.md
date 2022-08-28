@@ -29,6 +29,7 @@ version: "3.9"
 services:
   ihccaptainA:
     image: sbv1307/docker-ihccaptain:latest
+    container_name: ihccaptainA
     restart: always
     ports:
       - 8100:80
@@ -38,6 +39,7 @@ services:
   
   ihccaptainB:
     image: sbv1307/docker-ihccaptain:latest
+    container_name: ihccaptainB
     restart: always
     ports:
       - 8200:80
@@ -82,8 +84,8 @@ Detailed installation instructions for this "Profe of Concept" (PoC) project can
 - Stop running containers: `docker-compose stop`
 - Copy IHC Captain data into containers:
 ```bash
-docker cp ./ihcA_data/data pi_ihccaptainA_1:/opt/ihccaptain/
-docker cp ./ihcB_data/data pi_ihccaptainB_1:/opt/ihccaptain/
+docker cp ./ihcA_data/data pi_ihccaptainA_1:/opt/ihccaptain/data
+docker cp ./ihcB_data/data pi_ihccaptainB_1:/opt/ihccaptain/data
 ```
 - Start IHC Captain containers: `docker-compose up -d`
 
@@ -249,6 +251,13 @@ The containers tagged with "sh", does not start the IHC Captain services automat
 docker run -it -p 8300:80 -p 9300:443 sbv1307/docker-ihccaptain:sh
 ```
 
+Starting the instance (container) with the Docker Volume for IHC Captain mounted
+
+```bash
+
+docker run -it -p 8300:80 -p 9300:443 --mount source=ihc_captain_ihcA_data,target=/app  sbv1307/docker-ihccaptain:sh
+```
+
 When attached to the container, run and verify the services, started by
 `sbv1307/docker-ihccaptain:sh`
 
@@ -280,7 +289,22 @@ Before building the container, modify the Docker file:
 docker build --pull --rm -f "Dockerfile" -t docker-ihccaptain:<TAG>
 ```
 
+
 ## Credits
 
 - IHC® Captain by http://jemi.dk/ihc/
 - arberg/docker-ihccaptain by https://github.com/arberg
+
+## **Version History**
+Issue: Restore process didn't work<br>
+* Docker copy command incorrect as container has changed name after restart in a new working directory.<br>
+Solved by: Defining fixed container names in docker-compose file<br>
+
+* The Docker cp command in the Restore process has errors.<br>
+`docker cp ./ihcA_data/data pi_ihccaptainA_1:/opt/ihccaptain/`<br>
+changed to<br>
+`docker cp ./ihcA_data/data pi_ihccaptainA_1:/opt/ihccaptain/data`<br>
+And<br>
+`docker cp ./ihcB_data/data pi_ihccaptainB_1:/opt/ihccaptain/`<br>
+changed to<br>
+`docker cp ./ihcB_data/data pi_ihccaptainB_1:/opt/ihccaptain/data`
