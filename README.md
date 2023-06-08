@@ -1,6 +1,6 @@
 # Docker container for [IHC® Captain](https://jemi.dk/ihc/)
 
-#### Build on IHC Captain version 1.54, for Raspberry Pi model 3, controlling two IHC® Controllers.
+#### Build on IHC Captain Beta  (http://jemi.dk/ihc/files/install-new), for Raspberry Pi model 3, controlling two IHC® Controllers.
 
 The installationprocess will end up starting two docker containers (one for each IHC® Controller).
 The containers will expose port 8100 respectively 8200, on which IHC® Captain can be reached.
@@ -308,3 +308,6 @@ And<br>
 `docker cp ./ihcB_data/data pi_ihccaptainB_1:/opt/ihccaptain/`<br>
 changed to<br>
 `docker cp ./ihcB_data/data pi_ihccaptainB_1:/opt/ihccaptain/data`
+
+* Issues connection to Philips HUE.<br>
+`Verify http://jemi.dk/ihc/files/install-new`
