@@ -1,25 +1,92 @@
 # Docker container for [IHC® Captain](https://jemi.dk/ihc/)
 
-#### Build on IHC Captain Beta  (http://jemi.dk/ihc/files/install-new), for Raspberry Pi model 3, controlling two IHC® Controllers.
+#### Build on IHC Captain [v2.0.26](VERSION) written in [Go](https://go.dev/), for Raspberry Pi ARM64, controlling two IHC® Controllers.
 
-The installationprocess will end up starting two docker containers (one for each IHC® Controller).
+The installationprocess will end up starting two docker containers (one for each IHC® Controller) using docker compose.
 The containers will expose port 8100 respectively 8200, on which IHC® Captain can be reached.
 
 ## Usage
 
 * Open the web interface at 'http://[raspberry-pi-ip-address:8100](raspberry-pi-ip-address:8100)' and/or 'http://[raspberry-pi-ip-address:8200](raspberry-pi-ip-address:8200)'.
-* At first, a dialog box is opened, in which username, password and the IP address for the IHC® Controller is entered.[](https://)
-  'Use a specific IHC user, with administrator rights on the IHC® Controller for this purpose.'
 * After this is referred to [IHC® Captain's manual](https://jemi.dk/ihc/#mainmain).
 
 ## Requirements
-
-- Raspberry Pi model B v1.2. Installed with Raspberry Pi OS Lite (32-bit).
+- Raspberry Pi 3 Model B Plus Rev 1.3. Linux 6.12.47+rpt-rpi-v8installed with Debian GNU/Linux 13 (trixie) - 64 bit
 - Internet access and attached to the same local network as the two IHC® Controllers.
 - Docker (if you are new to Docker, see [Installing Docker and Docker Compose](https://dev.to/rohansawant/installing-docker-and-docker-compose-on-the-raspberry-pi-in-5-simple-steps-3mgl)).
 - User credentials for a specific user, with administrator rights on the IHC® Controller for this purpose.
 
+## Building IHC Docker image for docker compose.
+
+- Download binary from download section [Download IHC Captain](https://jemi.dk/ihc/#download) >- **Standalone Binaries & Docker / Proxmox**. 
+- Change the dropdown fields [**Windown**] to [**Raspberry pi (DietPi/Linux)**] and [**x64 (AMD64)**] to [**Alle arkitekturer**].
+- Download [Image **Raspberry Pi arm64**] image.
+- Unback the **.zip** image and rename the unpacked file to **goihccap**
+
+PS: Image for this build is **IHCCaptain_2.0.26_rpi-arm64_20261028-2308**
+
+### Crete the **Dockerfile** for building the image
+
+The **[Dockerfile](Dockerfile)**, locaed in the same directory as the **goihccap** file, should contain:
+
+```yaml
+FROM alpine:latest
+RUN apk --no-cache add ca-certificates tzdata libc6-compat
+WORKDIR /app
+COPY goihccap .
+RUN chmod +x goihccap && mkdir -p /app/data
+EXPOSE 80 443
+ENTRYPOINT ["./goihccap"]
+```
+
+### Build the image
+
+This is only required when the Docker image has not been pushed to Docker hub.
+
+```yaml
+docker buildx build --platform linux/amd64,linux/arm64 \
+  -t sbv1307/docker-ihccaptain:v2.0.26 \
+  -t sbv1307/docker-ihccaptain:latest \
+  --push .
+
+```
+
+### To verify the image
+
+On a Raspberry PI (CPU model arm64 ) run the following command:
+PS: Running it none-detached (obmit the -d option) will show meeeages!
+
+```Bash
+mkdir -p ${PWD}/data
+docker run --name ihc-server --network host -v ${PWD}/data:/app/data sbv1307/docker-ihccaptain:latest
+```
+
+
 ## Installation instructions
+
+The  [Installationsguide](https://jemi.dk/ihc/#installation) -> Docker documents:
+```MD
+"Du kan også sende -e IHC_IP="192.168.1.3" -e IHC_USERNAME="admin" -e IHC_PASSWORD="kode" direkte som miljøvariabler."
+```
+
+Create Environment file for docker compose
+
+```Bash
+vi .env
+```
+Then sdd:
+```basb
+# IHC A 
+IHC_A_IP=nnn.nnn.nnn.nnn
+IHC_A_USERNAME=username
+IHC_A_PASSWORD=password
+
+# IHC B 
+IHC_B_IP=nnn.nnn.nnn.nnn
+IHC_B_USERNAME=username
+IHC_B_PASSWORD=password
+
+```
 
 1. Create a file called `docker-compose.yml` with the following content:
 
@@ -286,7 +353,7 @@ Before building the container, modify the Docker file:
 * Deside which IHC Captain installer to use. P.t. the one at `http://jemi.dk/ihc/files/install` Fails to build the container.
 
 ```bash
-docker build --pull --rm -f "Dockerfile" -t docker-ihccaptain:<TAG>
+docker build --pull --rm -f "Dockerfile" -t docker-ihccaptain:<TAG> .
 ```
 
 
@@ -311,3 +378,12 @@ changed to<br>
 
 * Issues connection to Philips HUE.<br>
 `Verify http://jemi.dk/ihc/files/install-new`
+
+
+NOTES Where to find information about lates version of IHC Captain.
+
+https://www.findglocal.com/DK/Unknown/1650342671873791/IHC-Captain
+
+https://jemi.dk/ihc/beta/install-guide.html
+
+https://jemi.dk/ihc/beta/install-guide.html#docker
