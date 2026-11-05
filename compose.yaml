@@ -1,0 +1,36 @@
+services:
+  ihc-server-A:
+    image: sbv1307/docker-ihccaptain:latest
+    container_name: ihc-server-A
+    restart: always
+    #  Compose uses a separate bridge network by default, where ports 80 and 443 are free inside the container.
+    # The app auto-selects those ports, which is why 80 and 443 is mapped.
+    ports:
+      - 8100:80
+      - 9100:443
+    volumes:
+      - ihcA_data:/app/data
+    environment:
+      IHC_IP: ${IHC_A_IP}
+      IHC_USERNAME: "${IHC_A_USERNAME}"
+      IHC_PASSWORD: "${IHC_A_PASSWORD}"
+
+  ihc-server-B:
+    image: sbv1307/docker-ihccaptain:latest
+    container_name: ihc-server-B
+    restart: always
+   #  Compose uses a separate bridge network by default, where ports 80 and 443 are free inside the container.
+    # The app auto-selects those ports, which is why 80 and 443 is mapped.
+    ports:
+      - 8200:80
+      - 9200:443
+    volumes:
+      - ihcB_data:/app/data
+    environment:
+      IHC_IP: ${IHC_B_IP}
+      IHC_USERNAME: "${IHC_B_USERNAME}"
+      IHC_PASSWORD: "${IHC_B_PASSWORD}"
+
+volumes:
+  ihcA_data:
+  ihcB_data:

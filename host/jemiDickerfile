@@ -1,0 +1,7 @@
+FROM alpine:latest
+RUN apk --no-cache add ca-certificates tzdata libc6-compat
+WORKDIR /app
+COPY goihccap .
+RUN chmod +x goihccap && mkdir -p /app/data
+EXPOSE 80 443
+ENTRYPOINT ["./goihccap"]
